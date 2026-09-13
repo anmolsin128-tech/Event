@@ -1,0 +1,861 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/>```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAMPUS EVENT PLANNER -- Smart Conflict-Free Scheduler</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #0f172a;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom smooth scrollbar for horizontal timelines & tables */
+        ::-webkit-scrollbar {
+            height: 7px;
+            width: 7px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4f46e5;
+        }
+
+        /* Widescreen Light Card Surface */
+        .desktop-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .desktop-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-900 antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- ==========================================
+         TOP HERO SECTION (PURE WHITE BACKGROUND)
+         ========================================== -->
+    <header class="bg-white border-b border-slate-200 py-10 px-4 sm:px-8 lg:px-16 text-center shadow-sm">
+        <div class="max-w-4xl mx-auto space-y-4">
+            <!-- Big Bold Uppercase Title -->
+            <h1 class="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight text-slate-950 uppercase font-sans">
+                CAMPUS EVENT PLANNER
+            </h1>
+            
+            <!-- Subtitle in small text (1-2 lines) -->
+            <p class="text-xs sm:text-sm text-slate-600 font-medium max-w-2xl mx-auto leading-relaxed">
+                An intelligent college venue management dashboard designed to eliminate sports and event double-bookings, track real-time schedules, and auto-resolve timetable overlaps.
+            </p>
+
+            <!-- Prominent CTA Button directly below description -->
+            <div class="pt-2 flex flex-col items-center space-y-4">
+                <button onclick="openModal('addEventModal')" class="inline-flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm px-6 py-3 rounded-lg shadow-md hover:shadow-indigo-500/20 transition active:scale-95">
+                    <i class="fa-solid fa-plus text-sm"></i>
+                    <span>Schedule New Event</span>
+                </button>
+
+                <!-- 4 Navigation Slots -->
+                <div class="flex flex-wrap items-center justify-center gap-2 pt-2 border-t border-slate-100 w-full max-w-2xl">
+                    <button id="tab-btn-dashboard" onclick="switchTab('dashboard')" class="tab-nav-btn inline-flex items-center space-x-2 bg-indigo-600 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-md transition active:scale-95">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <span>1. Dashboard</span>
+                    </button>
+
+                    <button id="tab-btn-live" onclick="switchTab('live')" class="tab-nav-btn inline-flex items-center space-x-2 bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition active:scale-95">
+                        <i class="fa-solid fa-tower-broadcast text-emerald-600"></i>
+                        <span>2. Live Tracker</span>
+                    </button>
+
+                    <button id="tab-btn-database" onclick="switchTab('database')" class="tab-nav-btn inline-flex items-center space-x-2 bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition active:scale-95">
+                        <i class="fa-solid fa-database text-indigo-600"></i>
+                        <span>3. Event Database</span>
+                    </button>
+
+                    <button id="tab-btn-matrix" onclick="switchTab('matrix')" class="tab-nav-btn inline-flex items-center space-x-2 bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-bold px-4 py-2.5 rounded-lg shadow-sm transition active:scale-95">
+                        <i class="fa-solid fa-chart-gantt text-indigo-600"></i>
+                        <span>4. Timeline Matrix</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==========================================
+         MAIN APP SECTION (DESKTOP WIDESCREEN LIGHT MODE)
+         ========================================== -->
+    <main class="flex-1 py-8 px-4 sm:px-8 lg:px-12 max-w-[1700px] w-full mx-auto space-y-8">
+
+        <!-- Top Control Bar (Simulation Clock + Actions) -->
+        <div class="desktop-card p-4 sm:p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+            
+            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                <div class="flex items-center space-x-2 bg-slate-100 border border-slate-200 px-3.5 py-2 rounded-lg text-xs">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="font-mono text-slate-600 font-bold uppercase">Simulated Clock:</span>
+                    <input type="time" id="simTime" value="09:30" onchange="updateApp()" class="bg-white text-indigo-600 font-mono font-bold px-2.5 py-1 rounded border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs">
+                </div>
+
+                <div class="flex items-center space-x-1.5">
+                    <button onclick="changeTime(15)" class="bg-white hover:bg-slate-100 text-slate-700 font-mono text-xs px-3 py-2 rounded-lg border border-slate-200 transition font-semibold">
+                        +15m
+                    </button>
+                    <button onclick="changeTime(30)" class="bg-white hover:bg-slate-100 text-slate-700 font-mono text-xs px-3 py-2 rounded-lg border border-slate-200 transition font-semibold">
+                        +30m
+                    </button>
+                    <button onclick="resetTime()" class="bg-white hover:bg-slate-100 text-slate-500 hover:text-slate-900 text-xs px-3 py-2 rounded-lg border border-slate-200 transition" title="Reset to 09:00">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Global Status Summary Bar -->
+            <div class="flex items-center space-x-2 text-xs font-mono text-slate-500 bg-slate-100/80 px-4 py-2 rounded-lg border border-slate-200 w-full md:w-auto justify-center">
+                <i class="fa-solid fa-desktop text-indigo-500"></i>
+                <span>WIDESCREEN DESKTOP SYSTEM • LIVE READY</span>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             SLOT 1: DASHBOARD OVERVIEW VIEW
+             ========================================== -->
+        <div id="view-dashboard" class="tab-view space-y-8">
+            <!-- Metric KPI Cards Grid (4 Columns Widescreen Desktop) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                
+                <!-- Card 1: Total Events -->
+                <div class="desktop-card p-5">
+                    <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider">
+                        <span>Total Scheduled</span>
+                        <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                            <i class="fa-solid fa-calendar-check text-sm"></i>
+                        </div>
+                    </div>
+                    <p id="statTotal" class="text-3xl font-extrabold text-slate-900 font-mono mt-2">0</p>
+                    <p class="text-[11px] text-slate-500 mt-1">Events active in database</p>
+                </div>
+
+                <!-- Card 2: Happening Now -->
+                <div class="desktop-card p-5">
+                    <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider">
+                        <span>Happening Now</span>
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                            <i class="fa-solid fa-circle-play text-sm"></i>
+                        </div>
+                    </div>
+                    <p id="statLive" class="text-3xl font-extrabold text-slate-900 font-mono mt-2">0</p>
+                    <p class="text-[11px] text-slate-500 mt-1">At current simulated clock</p>
+                </div>
+
+                <!-- Card 3: Schedule Clashes -->
+                <div id="conflictCard" class="desktop-card p-5 transition">
+                    <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider">
+                        <span>Schedule Clashes</span>
+                        <div id="conflictIconBg" class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                            <i id="statConflictIcon" class="fa-solid fa-check text-sm"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-baseline justify-between mt-2">
+                        <p id="statConflicts" class="text-3xl font-extrabold text-slate-900 font-mono">0</p>
+                        <button id="autoFixBtn" onclick="autoFixConflicts()" class="hidden bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm transition flex items-center space-x-1.5">
+                            <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+                            <span>Auto-Fix</span>
+                        </button>
+                    </div>
+                    <p id="conflictSubtext" class="text-[11px] text-emerald-600 font-medium mt-1">No venue overlaps</p>
+                </div>
+
+                <!-- Card 4: Active Venues -->
+                <div class="desktop-card p-5">
+                    <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider">
+                        <span>Active Facilities</span>
+                        <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                            <i class="fa-solid fa-building-columns text-sm"></i>
+                        </div>
+                    </div>
+                    <p id="statVenuesCount" class="text-3xl font-extrabold text-slate-900 font-mono mt-2">0 / 4</p>
+                    <p class="text-[11px] text-slate-500 mt-1">Campus venues in use</p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ==========================================
+             SLOT 2: LIVE TRACKER VIEW
+             ========================================== -->
+        <div id="view-live" class="tab-view hidden space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <!-- Happening Now Widget -->
+                <div class="desktop-card p-6 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Happening Right Now
+                        </h3>
+                        <span class="text-[11px] font-mono text-slate-500">Live Tracker</span>
+                    </div>
+                    <div id="liveNowBox" class="space-y-3">
+                        <!-- Dynamic Live Cards -->
+                    </div>
+                </div>
+
+                <!-- Up Next Widget -->
+                <div class="desktop-card p-6 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-forward text-indigo-600 text-xs"></i>
+                            Up Next
+                        </h3>
+                        <span class="text-[11px] font-mono text-slate-500">Upcoming</span>
+                    </div>
+                    <div id="upNextBox" class="space-y-3">
+                        <!-- Dynamic Upcoming Cards -->
+                    </div>
+                </div>
+
+                <!-- Diagnostic Center -->
+                <div class="desktop-card p-6 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-shield-halved text-amber-500 text-xs"></i>
+                            Conflict Diagnostics Guard
+                        </h3>
+                        <span class="text-[11px] font-mono text-slate-500">System Inspector</span>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-relaxed">
+                        Automated checks continuously monitor venue double-bookings and time overlaps across all campus locations.
+                    </p>
+                    <div id="clashListBox" class="space-y-3">
+                        <!-- Dynamic Diagnostic Notices -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ==========================================
+             SLOT 3: REGISTERED EVENT DATABASE VIEW
+             ========================================== -->
+        <div id="view-database" class="tab-view hidden space-y-8">
+            <div class="desktop-card p-6 space-y-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-indigo-600"></i>
+                            Registered Event Database
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Complete timetable list of activities, matches, and sessions</p>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="flex items-center space-x-2">
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+                            <input type="text" id="searchInput" oninput="updateApp()" placeholder="Search title or staff..." class="bg-white text-xs text-slate-800 pl-8 pr-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-40 sm:w-52">
+                        </div>
+                        <select id="venueFilter" onchange="updateApp()" class="bg-white text-xs text-slate-800 px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="ALL">All Venues</option>
+                            <option value="Main Athletics Ground">Main Athletics Ground</option>
+                            <option value="Basketball Court">Basketball Court</option>
+                            <option value="Campus Auditorium">Campus Auditorium</option>
+                            <option value="Science Hall 1">Science Hall 1</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Scrollable Table -->
+                <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-100/80 text-slate-600 font-mono text-[11px] uppercase border-b border-slate-200">
+                            <tr>
+                                <th class="p-3.5 whitespace-nowrap">Event Title</th>
+                                <th class="p-3.5 whitespace-nowrap">Venue</th>
+                                <th class="p-3.5 whitespace-nowrap">Time Window</th>
+                                <th class="p-3.5 whitespace-nowrap">Coordinator</th>
+                                <th class="p-3.5 text-right whitespace-nowrap">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="eventsTable" class="divide-y divide-slate-100">
+                            <!-- Dynamic Table Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             SLOT 4: TIMELINE MATRIX VIEW
+             ========================================== -->
+        <div id="view-matrix" class="tab-view hidden space-y-8">
+            <div class="desktop-card p-6 space-y-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-gantt text-indigo-600"></i>
+                            Visual Venue Timeline Matrix
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Horizontal venue timetable (08:00 AM -- 03:00 PM window)</p>
+                    </div>
+                    <div class="text-xs font-mono text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+                        <span>Time Window: 7 Hours</span>
+                    </div>
+                </div>
+
+                <!-- Horizontally Scrollable Timeline Container (Ensures No Text Cutoff) -->
+                <div class="overflow-x-auto rounded-lg border border-slate-200 bg-slate-50/70 p-4">
+                    <div id="timelineContainer" class="min-w-[700px] space-y-3">
+                        <!-- Dynamic Timeline Content -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ==========================================
+         ADD EVENT MODAL
+         ========================================== -->
+    <div id="addEventModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="desktop-card max-w-md w-full p-6 relative bg-white border border-slate-200 shadow-2xl rounded-2xl">
+            <button onclick="closeModal('addEventModal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-800 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <div class="flex items-center space-x-3 mb-5 border-b border-slate-100 pb-4">
+                <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100">
+                    <i class="fa-solid fa-calendar-plus text-base"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Schedule New Event</h3>
+                    <p class="text-xs text-slate-500">Add a match, session, or rehearsal</p>
+                </div>
+            </div>
+
+            <form onsubmit="saveEvent(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Event Title *</label>
+                    <input type="text" id="evTitle" required placeholder="e.g. 100m Sprint Final" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Venue Location *</label>
+                    <select id="evVenue" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                        <option value="Main Athletics Ground">Main Athletics Ground</option>
+                        <option value="Basketball Court">Basketball Court</option>
+                        <option value="Campus Auditorium">Campus Auditorium</option>
+                        <option value="Science Hall 1">Science Hall 1</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Start Time *</label>
+                        <input type="time" id="evStart" required value="09:00" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">End Time *</label>
+                        <input type="time" id="evEnd" required value="10:00" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Coordinator / In-Charge</label>
+                    <input type="text" id="evTeacher" placeholder="e.g. Coach Miller" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('addEventModal')" class="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 font-medium transition">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition">Save Event</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         BOTTOM THANK YOU FOOTER
+         ========================================== -->
+    <footer class="mt-auto bg-white border-t border-slate-200 py-12 px-4 text-center">
+        <div class="max-w-4xl mx-auto space-y-3">
+            <h2 class="text-3xl sm:text-5xl font-black text-slate-950 tracking-wider font-sans uppercase">
+                THANK YOU
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-600 font-medium">
+                Thank you for using Campus Event Planner -- Streamlining college schedules with zero conflict.
+            </p>
+            <div class="pt-4 text-[11px] font-mono text-slate-400 flex items-center justify-center space-x-2">
+                <span>CAMPUS EVENT PLANNER</span>
+                <span>•</span>
+                <span>2026 DESKTOP EDITION</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ==========================================
+         APPLICATION LOGIC SCRIPT (FIREBASE REAL-TIME STORAGE)
+         ========================================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const VENUES = [
+            "Main Athletics Ground",
+            "Basketball Court",
+            "Campus Auditorium",
+            "Science Hall 1"
+        ];
+
+        // Clean initial state with zero default events
+        let events = [];
+
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'campus-event-planner';
+
+        async function initStorage() {
+            try {
+                if (typeof __firebase_config === 'undefined') {
+                    updateApp();
+                    return;
+                }
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                currentUser = auth.currentUser;
+                if (!currentUser) return;
+
+                const eventsCol = collection(db, 'artifacts', appId, 'public', 'data', 'events');
+                
+                // Read realtime state without auto-seeding default events
+                onSnapshot(eventsCol, (snapshot) => {
+                    events = [];
+                    snapshot.forEach(docSnap => {
+                        events.push({ id: docSnap.id, ...docSnap.data() });
+                    });
+                    updateApp();
+                }, (err) => {
+                    console.error("Database connection error:", err);
+                    updateApp();
+                });
+
+            } catch (err) {
+                console.error("Storage Initialization Error:", err);
+                updateApp();
+            }
+        }
+
+        function toMins(tStr) {
+            if (!tStr) return 0;
+            const [h, m] = tStr.split(':').map(Number);
+            return h * 60 + m;
+        }
+
+        function toTimeStr(mins) {
+            let h = Math.floor(mins / 60);
+            let m = mins % 60;
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        }
+
+        function changeTime(mins) {
+            const simInput = document.getElementById('simTime');
+            let current = toMins(simInput.value) + mins;
+            if (current >= 24 * 60) current = 0;
+            simInput.value = toTimeStr(current);
+            updateApp();
+        }
+
+        function resetTime() {
+            document.getElementById('simTime').value = "09:00";
+            updateApp();
+        }
+
+        function findClashes() {
+            const clashes = [];
+            for (let i = 0; i < events.length; i++) {
+                for (let j = i + 1; j < events.length; j++) {
+                    const e1 = events[i];
+                    const e2 = events[j];
+
+                    if (e1.venue === e2.venue) {
+                        const s1 = toMins(e1.start), eEnd1 = toMins(e1.end);
+                        const s2 = toMins(e2.start), eEnd2 = toMins(e2.end);
+
+                        if (s1 < eEnd2 && s2 < eEnd1) {
+                            clashes.push({ e1, e2 });
+                        }
+                    }
+                }
+            }
+            return clashes;
+        }
+
+        async function autoFixConflicts() {
+            const clashes = findClashes();
+            if (clashes.length === 0) return;
+
+            for (const c of clashes) {
+                const duration = toMins(c.e2.end) - toMins(c.e2.start);
+                const newStart = toMins(c.e1.end) + 15;
+                const newStartStr = toTimeStr(newStart);
+                const newEndStr = toTimeStr(newStart + duration);
+
+                if (db && currentUser) {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', String(c.e2.id));
+                    await setDoc(docRef, {
+                        title: c.e2.title,
+                        venue: c.e2.venue,
+                        start: newStartStr,
+                        end: newEndStr,
+                        teacher: c.e2.teacher || ''
+                    });
+                } else {
+                    c.e2.start = newStartStr;
+                    c.e2.end = newEndStr;
+                }
+            }
+
+            if (!db || !currentUser) {
+                updateApp();
+            }
+        }
+
+        function updateApp() {
+            const clashes = findClashes();
+            renderStats(clashes);
+            renderTimeline(clashes);
+            renderTable();
+            renderLiveNow();
+            renderUpNext();
+            renderClashesList(clashes);
+        }
+
+        function renderStats(clashes) {
+            document.getElementById('statTotal').innerText = events.length;
+            document.getElementById('statConflicts').innerText = clashes.length;
+
+            const card = document.getElementById('conflictCard');
+            const iconBg = document.getElementById('conflictIconBg');
+            const icon = document.getElementById('statConflictIcon');
+            const autoFixBtn = document.getElementById('autoFixBtn');
+            const subtext = document.getElementById('conflictSubtext');
+
+            if (clashes.length > 0) {
+                card.className = "desktop-card p-5 border-rose-300 bg-rose-50/50";
+                iconBg.className = "w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center";
+                icon.className = "fa-solid fa-triangle-exclamation text-sm";
+                autoFixBtn.classList.remove('hidden');
+                subtext.innerText = "Double-booked venue detected!";
+                subtext.className = "text-[11px] text-rose-600 font-semibold mt-1";
+            } else {
+                card.className = "desktop-card p-5";
+                iconBg.className = "w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center";
+                icon.className = "fa-solid fa-check text-sm";
+                autoFixBtn.classList.add('hidden');
+                subtext.innerText = "No venue overlaps";
+                subtext.className = "text-[11px] text-emerald-600 font-medium mt-1";
+            }
+
+            const activeVenuesCount = new Set(events.map(e => e.venue)).size;
+            document.getElementById('statVenuesCount').innerText = `${activeVenuesCount} / ${VENUES.length}`;
+        }
+
+        function renderTimeline(clashes) {
+            const container = document.getElementById('timelineContainer');
+            const clashingIds = new Set();
+            clashes.forEach(c => { clashingIds.add(c.e1.id); clashingIds.add(c.e2.id); });
+
+            const dayStart = 8 * 60; // 08:00 AM
+            const daySpan = 7 * 60;  // 7 Hours
+
+            const innerHTML = VENUES.map(v => {
+                const venueEvents = events.filter(e => e.venue === v);
+
+                const bars = venueEvents.map(e => {
+                    const startM = toMins(e.start);
+                    const endM = toMins(e.end);
+
+                    const leftPct = Math.max(0, ((startM - dayStart) / daySpan) * 100);
+                    const widthPct = Math.min(100 - leftPct, ((endM - startM) / daySpan) * 100);
+
+                    const isClash = clashingIds.has(e.id);
+                    
+                    const barStyle = isClash
+                        ? 'bg-rose-100 border-rose-400 text-rose-900 shadow-sm'
+                        : 'bg-indigo-50 border-indigo-300 text-indigo-950 shadow-sm';
+
+                    return `
+                        <div style="left: ${leftPct}%; width: ${Math.max(widthPct, 12)}%;" 
+                             class="absolute top-1 bottom-1 ${barStyle} border rounded-lg px-2.5 py-1 text-xs font-mono flex items-center justify-between overflow-x-auto whitespace-nowrap cursor-pointer transition hover:z-10"
+                             title="${e.title} (${e.start} - ${e.end})">
+                             <span class="font-sans font-semibold text-[11px] truncate">${isClash ? '⚠️ ' : ''}${e.title}</span>
+                             <span class="text-[10px] text-slate-500 font-mono ml-2">${e.start}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="grid grid-cols-12 items-center py-2.5 border-b border-slate-200/80 last:border-0 text-xs gap-3">
+                        <div class="col-span-4 font-bold text-slate-700 text-xs truncate" title="${v}">
+                            <i class="fa-solid fa-location-dot text-indigo-600 mr-1.5"></i>${v}
+                        </div>
+                        <div class="col-span-8 relative h-10 bg-white border border-slate-200 rounded-lg overflow-hidden shadow-inner">
+                            ${bars}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = innerHTML;
+        }
+
+        function renderTable() {
+            const table = document.getElementById('eventsTable');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const venueFilter = document.getElementById('venueFilter').value;
+
+            const filteredEvents = events.filter(e => {
+                const matchesSearch = e.title.toLowerCase().includes(search) || (e.teacher && e.teacher.toLowerCase().includes(search));
+                const matchesVenue = venueFilter === 'ALL' || e.venue === venueFilter;
+                return matchesSearch && matchesVenue;
+            });
+
+            if (filteredEvents.length === 0) {
+                table.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 text-xs italic">No events found matching criteria.</td></tr>`;
+                return;
+            }
+
+            table.innerHTML = filteredEvents.map(e => `
+                <tr class="hover:bg-slate-50/80 transition">
+                    <td class="p-3.5 font-bold text-slate-900 whitespace-nowrap">${e.title}</td>
+                    <td class="p-3.5 whitespace-nowrap">
+                        <span class="border border-slate-200 bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md text-[11px] font-semibold">${e.venue}</span>
+                    </td>
+                    <td class="p-3.5 font-mono text-indigo-600 font-medium whitespace-nowrap">${e.start} -- ${e.end}</td>
+                    <td class="p-3.5 text-slate-600 whitespace-nowrap">${e.teacher || 'Unassigned'}</td>
+                    <td class="p-3.5 text-right whitespace-nowrap">
+                        <button onclick="deleteEvent('${e.id}')" title="Delete Event" class="text-slate-400 hover:text-rose-600 p-1.5 transition">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderLiveNow() {
+            const currentMins = toMins(document.getElementById('simTime').value);
+            const liveEvents = events.filter(e => {
+                const s = toMins(e.start);
+                const end = toMins(e.end);
+                return currentMins >= s && currentMins < end;
+            });
+
+            document.getElementById('statLive').innerText = liveEvents.length;
+            const box = document.getElementById('liveNowBox');
+
+            if (liveEvents.length === 0) {
+                box.innerHTML = `<div class="p-4 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-400 text-center italic">No active events at this time slot.</div>`;
+                return;
+            }
+
+            box.innerHTML = liveEvents.map(e => `
+                <div class="bg-emerald-50/80 border border-emerald-200 p-3.5 rounded-lg text-xs space-y-1 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-emerald-900">${e.title}</span>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-600 text-white font-bold">LIVE</span>
+                    </div>
+                    <p class="text-[11px] text-slate-600 font-medium">
+                        <i class="fa-solid fa-location-dot text-emerald-600 mr-1"></i>${e.venue}
+                    </p>
+                    <p class="text-[11px] font-mono text-slate-500">Time: ${e.start} -- ${e.end}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderUpNext() {
+            const currentMins = toMins(document.getElementById('simTime').value);
+            const upcoming = events.filter(e => toMins(e.start) > currentMins)
+                                  .sort((a,b) => toMins(a.start) - toMins(b.start));
+
+            const box = document.getElementById('upNextBox');
+
+            if (upcoming.length === 0) {
+                box.innerHTML = `<div class="p-4 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-400 text-center italic">No further events scheduled today.</div>`;
+                return;
+            }
+
+            box.innerHTML = upcoming.slice(0, 3).map(e => `
+                <div class="bg-white border border-slate-200 p-3.5 rounded-lg text-xs hover:border-slate-300 transition space-y-1 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-800">${e.title}</span>
+                        <span class="font-mono text-indigo-600 font-bold text-[11px]">${e.start}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500">
+                        <i class="fa-solid fa-location-dot text-slate-400 mr-1"></i>${e.venue}
+                    </p>
+                </div>
+            `).join('');
+        }
+
+        function renderClashesList(clashes) {
+            const box = document.getElementById('clashListBox');
+            if (clashes.length === 0) {
+                box.innerHTML = `
+                    <div class="p-3.5 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-xs flex items-center space-x-2 font-medium">
+                        <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
+                        <span>All schedules are conflict-free!</span>
+                    </div>
+                `;
+                return;
+            }
+
+            box.innerHTML = clashes.map(c => `
+                <div class="p-3.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-900 text-xs space-y-1.5 shadow-sm">
+                    <div class="flex items-center justify-between font-bold text-rose-700">
+                        <span class="flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> Venue Double-Booking</span>
+                    </div>
+                    <p class="text-[11px] text-slate-700">Location: <span class="font-bold text-slate-900">${c.e1.venue}</span></p>
+                    <ul class="list-disc list-inside text-[11px] text-rose-800 space-y-0.5 font-medium">
+                        <li>${c.e1.title} (${c.e1.start})</li>
+                        <li>${c.e2.title} (${c.e2.start})</li>
+                    </ul>
+                </div>
+            `).join('');
+        }
+
+        async function saveEvent(e) {
+            e.preventDefault();
+            const title = document.getElementById('evTitle').value;
+            const venue = document.getElementById('evVenue').value;
+            const start = document.getElementById('evStart').value;
+            const end = document.getElementById('evEnd').value;
+            const teacher = document.getElementById('evTeacher').value;
+
+            const newId = `ev-${Date.now()}`;
+            const newEvent = { title, venue, start, end, teacher };
+
+            if (db && currentUser) {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', newId);
+                await setDoc(docRef, newEvent);
+            } else {
+                events.push({ id: newId, ...newEvent });
+                updateApp();
+            }
+
+            closeModal('addEventModal');
+            e.target.reset();
+        }
+
+        async function deleteEvent(id) {
+            if (db && currentUser) {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', String(id));
+                await deleteDoc(docRef);
+            } else {
+                events = events.filter(e => String(e.id) !== String(id));
+                updateApp();
+            }
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function switchTab(tabId) {
+            // Hide all views
+            document.querySelectorAll('.tab-view').forEach(view => view.classList.add('hidden'));
+
+            // Reset tab button styles
+            document.querySelectorAll('.tab-nav-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-md');
+                btn.classList.add('bg-slate-100', 'text-slate-700', 'hover:bg-slate-200');
+            });
+
+            // Show selected view
+            const selectedView = document.getElementById('view-' + tabId);
+            if (selectedView) {
+                selectedView.classList.remove('hidden');
+            }
+
+            // Highlight selected tab button
+            const selectedBtn = document.getElementById('tab-btn-' + tabId);
+            if (selectedBtn) {
+                selectedBtn.classList.remove('bg-slate-100', 'text-slate-700', 'hover:bg-slate-200');
+                selectedBtn.classList.add('bg-indigo-600', 'text-white', 'shadow-md');
+            }
+        }
+
+        // Expose functions globally for UI event handlers
+        window.switchTab = switchTab;
+        window.changeTime = changeTime;
+        window.resetTime = resetTime;
+        window.updateApp = updateApp;
+        window.autoFixConflicts = autoFixConflicts;
+        window.saveEvent = saveEvent;
+        window.deleteEvent = deleteEvent;
+        window.openModal = openModal;
+        window.closeModal = closeModal;
+
+        window.onload = function() {
+            initStorage();
+        };
+    </script>
+</body>
+</html>
+```
